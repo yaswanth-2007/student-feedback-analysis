@@ -1,0 +1,181 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Reports & Exports &bull; FeedbackInsight{% endblock %}
+{% block page_title %}Evaluation Reports & Data Export{% endblock %}
+
+{% block admin_content %}
+<!-- Export Actions Bar -->
+<div class="card-academic p-4 mb-4 bg-white border">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <span class="badge bg-indigo-subtle text-primary mb-2">Institutional Report Generator</span>
+            <h4 class="fw-bold text-dark mb-1">Generate Downloadable Evaluation Packages</h4>
+            <p class="text-secondary small mb-0">
+                Exports utilize the exact same deterministic Pandas aggregations as the live dashboard.
+            </p>
+        </div>
+        <div class="col-lg-5 text-lg-end mt-3 mt-lg-0 d-flex flex-wrap gap-2 justify-content-lg-end">
+            <a href="{{ url_for('reports.export_csv', course_id=selected_course_id, faculty_id=selected_faculty_id, start_date=start_date, end_date=end_date) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download CSV Summary
+            </a>
+            <a href="{{ url_for('reports.export_pdf', course_id=selected_course_id, faculty_id=selected_faculty_id, start_date=start_date, end_date=end_date) }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Generate Official PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card-academic p-3 mb-4 bg-white border">
+    <form method="GET" action="{{ url_for('reports.index') }}" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">Target Course</label>
+            <select name="course_id" class="form-select form-select-sm">
+                <option value="">All Courses</option>
+                {% for c in all_courses %}
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                        {{ c.course_code }} - {{ c.course_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">Faculty Member</label>
+            <select name="faculty_id" class="form-select form-select-sm">
+                <option value="">All Instructors</option>
+                {% for f in all_faculty %}
+                    <option value="{{ f.id }}" {% if selected_faculty_id == f.id %}selected{% endif %}>
+                        {{ f.faculty_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">From</label>
+            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date or '' }}">
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">To</label>
+            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date or '' }}">
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-fill">Apply Filters</button>
+            {% if selected_course_id or selected_faculty_id or start_date or end_date %}
+                <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Report Preview: Course Evaluation Breakdown -->
+<div class="card-academic mb-4">
+    <div class="card-header-clean">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Report Preview &bull; Course Averages & Distribution</h6>
+        <span class="badge bg-light text-secondary fs-8">Included in export</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Department</th>
+                    <th>Instructor</th>
+                    <th class="text-center">Valid Ratings</th>
+                    <th class="text-center">Mean (1-5)</th>
+                    <th class="text-center">Std Dev</th>
+                    <th class="text-center">Reliability</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if courses %}
+                    {% for c in courses %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ c.course_code }}</td>
+                            <td>{{ c.course_name }}</td>
+                            <td><span class="badge bg-light text-secondary border">{{ c.department }}</span></td>
+                            <td class="text-muted fs-8">{{ c.faculty_name }}</td>
+                            <td class="text-center">{{ c.valid_responses }}</td>
+                            <td class="text-center fw-bold">
+                                {{ c.mean_rating if c.mean_rating is not none else 'N/A' }}
+                            </td>
+                            <td class="text-center text-muted">
+                                {{ c.std_dev if c.std_dev is not none else 'N/A' }}
+                            </td>
+                            <td class="text-center">
+                                {% if c.is_reliable %}
+                                    <span class="badge-academic badge-reliable">Reliable (n&ge;5)</span>
+                                {% else %}
+                                    <span class="badge-academic badge-low-sample">Low Sample</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No course evaluations matching filters.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Report Preview: Question Performance Breakdown -->
+<div class="card-academic">
+    <div class="card-header-clean">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-ui-checks text-primary me-2"></i>Report Preview &bull; Question-Level Breakdown</h6>
+        <span class="badge bg-light text-secondary fs-8">Aggregate Metrics</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">ID</th>
+                    <th>Feedback Prompt</th>
+                    <th>Category</th>
+                    <th class="text-center">Responses</th>
+                    <th class="text-center">Mean Rating</th>
+                    <th class="text-center">Distribution (1 to 5)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if questions %}
+                    {% for q in questions %}
+                        <tr>
+                            <td class="text-muted fw-bold">{{ q.question_id }}</td>
+                            <td class="fw-semibold text-dark">{{ q.question_text }}</td>
+                            <td><span class="badge bg-light text-secondary border">{{ q.category }}</span></td>
+                            <td class="text-center">{{ q.valid_responses }}</td>
+                            <td class="text-center fw-bold">
+                                {{ q.mean_rating if q.mean_rating is not none else 'N/A' }}
+                            </td>
+                            <td class="text-center">
+                                {% if q.question_type == 'rating' %}
+                                    <div class="d-inline-flex gap-1 fs-8">
+                                        <span class="badge bg-danger-subtle text-danger" title="Score 1">{{ q.distribution[1] }}</span>
+                                        <span class="badge bg-warning-subtle text-warning" title="Score 2">{{ q.distribution[2] }}</span>
+                                        <span class="badge bg-light text-dark" title="Score 3">{{ q.distribution[3] }}</span>
+                                        <span class="badge bg-info-subtle text-info" title="Score 4">{{ q.distribution[4] }}</span>
+                                        <span class="badge bg-success-subtle text-success" title="Score 5">{{ q.distribution[5] }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted fs-8">Text Comments</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No question analytics available.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

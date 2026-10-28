@@ -1,0 +1,178 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Feedback Questions &bull; FeedbackInsight{% endblock %}
+{% block page_title %}Evaluation Survey Questions{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+    <i class="bi bi-plus-lg me-1"></i> Add New Question
+</button>
+{% endblock %}
+
+{% block admin_content %}
+<div class="card-academic">
+    <div class="card-header-clean">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-ui-checks-grid text-primary me-2"></i>Active Survey Questionnaire ({{ questions|length }})</h6>
+        <span class="text-muted fs-8">Reordering and categories configure student survey layout</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Order</th>
+                    <th>Question Text</th>
+                    <th>Category</th>
+                    <th class="text-center">Type</th>
+                    <th class="text-center">Required</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if questions %}
+                    {% for q in questions %}
+                        <tr>
+                            <td class="text-muted fw-bold">{{ q.display_order }}</td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ q.question_text }}</div>
+                            </td>
+                            <td><span class="badge bg-light text-secondary border">{{ q.category }}</span></td>
+                            <td class="text-center">
+                                {% if q.question_type == 'rating' %}
+                                    <span class="badge bg-indigo-subtle text-primary">1-5 Rating</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary">Written Text</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if q.is_required %}
+                                    <span class="badge bg-danger-subtle text-danger fs-8">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted fs-8">No</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if q.is_active %}
+                                    <span class="badge-academic badge-active">Active</span>
+                                {% else %}
+                                    <span class="badge-academic badge-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editQuestionModal{{ q.id }}" title="Edit Question">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form action="{{ url_for('admin.toggle_question', question_id=q.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Toggle status for question #{{ q.id }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn {% if q.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if q.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            <i class="bi {% if q.is_active %}bi-pause-circle{% else %}bi-play-circle{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Edit Question Modal -->
+                                <div class="modal fade" id="editQuestionModal{{ q.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content text-start">
+                                            <form action="{{ url_for('admin.edit_question', question_id=q.id) }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <div class="modal-header">
+                                                    <h6 class="modal-title fw-bold">Edit Question #{{ q.id }}</h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fs-8 fw-semibold text-dark">Question Prompt Text</label>
+                                                        <textarea name="question_text" class="form-control" rows="3" required>{{ q.question_text }}</textarea>
+                                                    </div>
+                                                    <div class="row g-2 mb-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fs-8 fw-semibold text-dark">Category</label>
+                                                            <input type="text" name="category" class="form-control" value="{{ q.category }}" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fs-8 fw-semibold text-dark">Display Order</label>
+                                                            <input type="number" name="display_order" class="form-control" value="{{ q.display_order }}" min="0">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="is_required" id="editReq{{ q.id }}" {% if q.is_required %}checked{% endif %}>
+                                                        <label class="form-check-label fs-8 text-dark" for="editReq{{ q.id }}">
+                                                            Required Question (Mandatory before submission)
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            No feedback questions configured. Use the button above to add questions.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Question Modal -->
+<div class="modal fade" id="addQuestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('admin.questions') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Create Survey Question</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-semibold text-dark">Prompt / Question Text</label>
+                        <textarea name="question_text" class="form-control" rows="3" placeholder="e.g. The instructor clearly communicated expectations..." required></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fs-8 fw-semibold text-dark">Category</label>
+                            <input type="text" name="category" class="form-control" placeholder="e.g. Instruction, Assessment" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fs-8 fw-semibold text-dark">Question Format</label>
+                            <select name="question_type" class="form-select">
+                                <option value="rating">1-5 Rating Scale</option>
+                                <option value="comment">Written Feedback Comment</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fs-8 fw-semibold text-dark">Display Order</label>
+                            <input type="number" name="display_order" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center pt-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_required" id="addIsReq" checked>
+                                <label class="form-check-label fs-8 text-dark" for="addIsReq">Mandatory answer</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Add Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

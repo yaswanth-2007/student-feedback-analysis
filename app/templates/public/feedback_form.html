@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluate {{ course.course_code }} &bull; FeedbackInsight{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+    <div class="col-lg-8">
+        <!-- Back Navigation & Breadcrumb -->
+        <div class="mb-3">
+            <a href="{{ url_for('feedback.portal') }}" class="text-secondary small fw-medium text-decoration-none">
+                <i class="bi bi-chevron-left me-1"></i> Back to Courses Catalog
+            </a>
+        </div>
+
+        <!-- Course Summary Card -->
+        <div class="card-academic p-4 mb-4 bg-white border">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <span class="badge bg-indigo-subtle text-primary border border-indigo-subtle px-2 py-1 fw-bold fs-7">
+                    {{ course.course_code }}
+                </span>
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-building me-1"></i> {{ course.department }}
+                </span>
+            </div>
+            <h2 class="fw-bold text-dark mb-1">{{ course.course_name }}</h2>
+            <p class="text-muted small mb-2">
+                <i class="bi bi-person-circle me-1"></i>
+                <strong>Instructor:</strong> {{ course.faculty.faculty_name if course.faculty else 'Departmental Faculty' }}
+            </p>
+            <p class="text-secondary small mb-0">{{ course.description }}</p>
+        </div>
+
+        <!-- Anonymity Notice -->
+        <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-4 border-0 bg-info-subtle text-dark" role="alert">
+            <i class="bi bi-shield-check text-info fs-5"></i>
+            <div class="fs-8">
+                <strong>Completely Anonymous:</strong> Your responses cannot be linked to you. Please answer honestly to help improve course quality.
+            </div>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="card-academic p-3 mb-4 bg-white border">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-semibold fs-8 text-dark"><i class="bi bi-list-check me-1 text-primary"></i>Survey Completion</span>
+                <span id="surveyProgressText" class="text-muted fs-8">0% Completed</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div id="surveyProgressBar" class="progress-bar bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <!-- Main Feedback Form -->
+        <form method="POST" id="studentFeedbackForm" action="{{ url_for('feedback.feedback_form', course_id=course.id) }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            {% for q in questions %}
+                <div class="card-academic p-4 mb-3 survey-question-block" data-required="{{ 'true' if q.is_required else 'false' }}" id="question_block_{{ q.id }}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-light text-secondary border fs-8">
+                            {{ q.category }}
+                        </span>
+                        {% if q.is_required %}
+                            <span class="badge bg-danger-subtle text-danger fs-8">Required</span>
+                        {% else %}
+                            <span class="badge bg-light text-muted fs-8">Optional</span>
+                        {% endif %}
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3">
+                        <span class="text-muted me-1">{{ loop.index }}.</span> {{ q.question_text }}
+                    </h5>
+
+                    {% if q.question_type == 'rating' %}
+                        <!-- 1-5 Custom Selectable Rating Scale -->
+                        <div class="rating-scale-group">
+                            <label class="rating-option">
+                                <input type="radio" name="rating_{{ q.id }}" value="1" {% if q.is_required %}required{% endif %}>
+                                <div class="rating-card">
+                                    <div class="rating-number">1</div>
+                                    <div class="rating-label">Poor</div>
+                                </div>
+                            </label>
+
+                            <label class="rating-option">
+                                <input type="radio" name="rating_{{ q.id }}" value="2">
+                                <div class="rating-card">
+                                    <div class="rating-number">2</div>
+                                    <div class="rating-label">Below Avg</div>
+                                </div>
+                            </label>
+
+                            <label class="rating-option">
+                                <input type="radio" name="rating_{{ q.id }}" value="3">
+                                <div class="rating-card">
+                                    <div class="rating-number">3</div>
+                                    <div class="rating-label">Average</div>
+                                </div>
+                            </label>
+
+                            <label class="rating-option">
+                                <input type="radio" name="rating_{{ q.id }}" value="4">
+                                <div class="rating-card">
+                                    <div class="rating-number">4</div>
+                                    <div class="rating-label">Good</div>
+                                </div>
+                            </label>
+
+                            <label class="rating-option">
+                                <input type="radio" name="rating_{{ q.id }}" value="5">
+                                <div class="rating-card">
+                                    <div class="rating-number">5</div>
+                                    <div class="rating-label">Excellent</div>
+                                </div>
+                            </label>
+                        </div>
+                    {% endif %}
+
+                    {% if q.question_type == 'comment' %}
+                        <div class="mt-2">
+                            <textarea name="comment_{{ q.id }}" rows="4" class="form-control" maxlength="2000" placeholder="Provide constructive observations, recommendations, or suggestions..."></textarea>
+                            <div class="form-text fs-8 text-muted mt-1">Maximum 2,000 characters. Please do not include identifying personal details.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <!-- Submission Confirmation and Actions -->
+            <div class="card-academic p-4 bg-light border text-center mt-4">
+                <p class="small text-muted mb-3">
+                    By submitting, your evaluation is encrypted and committed without identity tracking. Anonymous submissions cannot be recalled or edited once saved.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('feedback.portal') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                    <button type="submit" id="submitFeedbackBtn" class="btn btn-primary px-5 py-2">
+                        <i class="bi bi-send-check me-2"></i> Submit Anonymous Feedback
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% endblock %}

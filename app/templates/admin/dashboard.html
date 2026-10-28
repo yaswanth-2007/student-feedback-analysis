@@ -1,0 +1,307 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Analytics Overview &bull; Dashboard{% endblock %}
+{% block page_title %}Institutional Analytics Overview{% endblock %}
+
+{% block header_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{{ url_for('reports.index') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-download me-1"></i> Export Reports
+    </a>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Analytics Filter Bar -->
+<div class="card-academic p-3 mb-4 bg-white border">
+    <form method="GET" action="{{ url_for('admin.dashboard') }}" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">Course Filter</label>
+            <select name="course_id" class="form-select form-select-sm">
+                <option value="">All Academic Courses</option>
+                {% for c in all_courses %}
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                        {{ c.course_code }} - {{ c.course_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">Faculty Filter</label>
+            <select name="faculty_id" class="form-select form-select-sm">
+                <option value="">All Faculty Instructors</option>
+                {% for f in all_faculty %}
+                    <option value="{{ f.id }}" {% if selected_faculty_id == f.id %}selected{% endif %}>
+                        {{ f.faculty_name }} ({{ f.department }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">From Date</label>
+            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date or '' }}">
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label fs-8 fw-semibold text-secondary mb-1">To Date</label>
+            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date or '' }}">
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                <i class="bi bi-funnel me-1"></i> Apply
+            </button>
+            {% if selected_course_id or selected_faculty_id or start_date or end_date %}
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- 4 Key Performance Indicators (KPIs) -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-icon-indigo">
+                <i class="bi bi-chat-heart"></i>
+            </div>
+            <div class="kpi-title">Total Submissions</div>
+            <div class="kpi-value">{{ kpis.total_submissions }}</div>
+            <div class="kpi-subtext">{{ kpis.valid_ratings_count }} ratings analyzed</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-icon-emerald">
+                <i class="bi bi-star"></i>
+            </div>
+            <div class="kpi-title">Overall Mean Rating</div>
+            <div class="kpi-value">
+                {% if kpis.overall_average %}
+                    {{ kpis.overall_average }}<span class="fs-6 fw-normal text-muted"> / 5.0</span>
+                {% else %}
+                    <span class="text-muted">N/A</span>
+                {% endif %}
+            </div>
+            <div class="kpi-subtext">Calculated across all dimensions</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-icon-sky">
+                <i class="bi bi-mortarboard"></i>
+            </div>
+            <div class="kpi-title">Active Courses</div>
+            <div class="kpi-value">{{ kpis.total_active_courses }}</div>
+            <div class="kpi-subtext">Currently listed for evaluation</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-icon-amber">
+                <i class="bi bi-check2-all"></i>
+            </div>
+            <div class="kpi-title">Evaluated Courses</div>
+            <div class="kpi-value">{{ kpis.courses_with_feedback }}</div>
+            <div class="kpi-subtext">Have at least 1 evaluation</div>
+        </div>
+    </div>
+</div>
+
+<!-- Deterministic Insight Summaries -->
+{% if insights %}
+<div class="card-academic p-4 mb-4 bg-white border">
+    <h5 class="fw-bold text-dark mb-3">
+        <i class="bi bi-lightbulb text-warning me-2"></i>Deterministic Analytical Observations
+    </h5>
+    <div class="row g-2">
+        {% for ins in insights %}
+            <div class="col-md-6">
+                <div class="insight-item insight-{{ ins.type }}">
+                    <div class="fw-bold fs-8 text-dark mb-1">{{ ins.title }}</div>
+                    <div class="fs-8 text-secondary">{{ ins.description }}</div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Primary Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Course-wise Average Rating (Horizontal Bar) -->
+    <div class="col-lg-7">
+        <div class="card-academic h-100">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Course-Wise Average Ratings</h6>
+                <span class="badge bg-light text-secondary fs-8">Scale: 1.0 - 5.0</span>
+            </div>
+            <div class="card-body-clean">
+                <div style="height: 290px;">
+                    {% set course_codes = [] %}
+                    {% set course_avgs = [] %}
+                    {% for c in courses %}
+                        {% if c.mean_rating is not none %}
+                            {% set _ = course_codes.append(c.course_code) %}
+                            {% set _ = course_avgs.append(c.mean_rating) %}
+                        {% endif %}
+                    {% endfor %}
+                    <canvas id="courseRatingChart"
+                            data-labels='{{ course_codes|tojson }}'
+                            data-averages='{{ course_avgs|tojson }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Distribution (1 to 5 Discrete Bar Chart) -->
+    <div class="col-lg-5">
+        <div class="card-academic h-100">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-pie-chart text-primary me-2"></i>Score Distribution (1 through 5)</h6>
+                <span class="badge bg-light text-secondary fs-8">All Valid Evaluations</span>
+            </div>
+            <div class="card-body-clean">
+                <div style="height: 290px;">
+                    {% set counts_list = [
+                        distribution.counts[1],
+                        distribution.counts[2],
+                        distribution.counts[3],
+                        distribution.counts[4],
+                        distribution.counts[5]
+                    ] %}
+                    <canvas id="ratingDistributionChart"
+                            data-counts='{{ counts_list|tojson }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Charts: Submissions Over Time and Question Averages -->
+<div class="row g-4 mb-4">
+    <!-- Submissions Over Time (Line Chart) -->
+    <div class="col-lg-6">
+        <div class="card-academic h-100">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-activity text-primary me-2"></i>Evaluations Timeline</h6>
+                <span class="badge bg-light text-secondary fs-8">Daily Submissions</span>
+            </div>
+            <div class="card-body-clean">
+                <div style="height: 260px;">
+                    <canvas id="submissionTrendChart"
+                            data-course-id="{{ selected_course_id or '' }}"
+                            data-start-date="{{ start_date or '' }}"
+                            data-end-date="{{ end_date or '' }}"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question-wise Average Rating -->
+    <div class="col-lg-6">
+        <div class="card-academic h-100">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-ui-checks text-primary me-2"></i>Question-Wise Average Performance</h6>
+                <span class="badge bg-light text-secondary fs-8">Mean Score</span>
+            </div>
+            <div class="card-body-clean">
+                <div style="height: 260px;">
+                    {% set q_labels = [] %}
+                    {% set q_avgs = [] %}
+                    {% for q in questions %}
+                        {% if q.question_type == 'rating' %}
+                            {% set _ = q_labels.append(q.question_text) %}
+                            {% set _ = q_avgs.append(q.mean_rating or 0) %}
+                        {% endif %}
+                    {% endfor %}
+                    <canvas id="questionRatingChart"
+                            data-labels='{{ q_labels|tojson }}'
+                            data-averages='{{ q_avgs|tojson }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Comparison & Statistical Summary Table -->
+<div class="card-academic">
+    <div class="card-header-clean">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table text-primary me-2"></i>Comprehensive Course Comparison</h6>
+        <span class="badge bg-light text-secondary fs-8">Sorted by Mean Rating</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Instructor</th>
+                    <th class="text-center">Submissions</th>
+                    <th class="text-center">Mean Rating</th>
+                    <th class="text-center">Median</th>
+                    <th class="text-center">Std Dev</th>
+                    <th class="text-center">Sample Reliability</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if courses %}
+                    {% for c in courses %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ c.course_code }}</td>
+                            <td>{{ c.course_name }}</td>
+                            <td class="text-muted fs-8">{{ c.faculty_name }}</td>
+                            <td class="text-center">{{ c.submission_count }}</td>
+                            <td class="text-center fw-bold">
+                                {% if c.mean_rating is not none %}
+                                    <span class="text-primary">{{ c.mean_rating }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center text-secondary">
+                                {{ c.median_rating if c.median_rating is not none else 'N/A' }}
+                            </td>
+                            <td class="text-center text-muted">
+                                {{ c.std_dev if c.std_dev is not none else 'N/A' }}
+                            </td>
+                            <td class="text-center">
+                                {% if c.valid_responses >= 5 %}
+                                    <span class="badge-academic badge-reliable">
+                                        <i class="bi bi-check-circle"></i> Reliable (n={{ c.valid_responses }})
+                                    </span>
+                                {% elif c.valid_responses > 0 %}
+                                    <span class="badge-academic badge-low-sample" title="Low response count may not reflect broader class sentiment">
+                                        <i class="bi bi-exclamation-triangle"></i> Low Sample (n={{ c.valid_responses }})
+                                    </span>
+                                {% else %}
+                                    <span class="badge-academic badge-inactive">No Evaluations</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            No course records match your filtering parameters.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js 4 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

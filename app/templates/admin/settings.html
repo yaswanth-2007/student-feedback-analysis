@@ -1,0 +1,140 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Settings & Profile &bull; FeedbackInsight{% endblock %}
+{% block page_title %}Administrative Settings & Profile{% endblock %}
+
+{% block admin_content %}
+<div class="row g-4">
+    <!-- Profile & Password Management -->
+    <div class="col-lg-6">
+        <div class="card-academic mb-4">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-person-gear text-primary me-2"></i>Administrator Profile</h6>
+            </div>
+            <div class="card-body-clean">
+                <div class="mb-3">
+                    <label class="form-label fs-8 text-muted mb-0">Display Name</label>
+                    <div class="fw-bold text-dark fs-6">{{ current_user.display_name }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fs-8 text-muted mb-0">Institutional Email</label>
+                    <div class="text-dark">{{ current_user.email }}</div>
+                </div>
+                <div>
+                    <label class="form-label fs-8 text-muted mb-0">Role & Access Tier</label>
+                    <div><span class="badge bg-indigo-subtle text-primary">System Administrator</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-academic">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-key text-primary me-2"></i>Change Administrator Password</h6>
+            </div>
+            <div class="card-body-clean">
+                <form action="{{ url_for('admin.change_password') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label fs-8 fw-semibold text-dark">Current Password</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" id="currentPassword" name="current_password" class="form-control" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="currentPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label fs-8 fw-semibold text-dark">New Password</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" id="newPassword" name="new_password" class="form-control" minlength="8" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="newPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text fs-8 text-muted">Minimum 8 characters. Use letters, numbers, and symbols.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label fs-8 fw-semibold text-dark">Confirm New Password</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" id="confirmPassword" name="confirm_password" class="form-control" minlength="8" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="confirmPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-shield-check me-1"></i> Update Password
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Settings & Survey Controls -->
+    <div class="col-lg-6">
+        <div class="card-academic mb-4">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-sliders text-primary me-2"></i>Survey Availability Controls</h6>
+            </div>
+            <div class="card-body-clean">
+                <p class="small text-secondary mb-3">
+                    Control whether students can submit course evaluations across the institution. Disabling this closes the public feedback portal for maintenance or between academic terms.
+                </p>
+
+                <form action="{{ url_for('admin.update_survey_status') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="surveySwitch" name="enabled" {% if survey_enabled %}checked{% endif %}>
+                        <label class="form-check-label fw-bold text-dark" for="surveySwitch">
+                            Accept Student Feedback Submissions
+                        </label>
+                        <div class="form-text fs-8">
+                            {% if survey_enabled %}
+                                <span class="text-success"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i>Portal is currently active and open to submissions.</span>
+                            {% else %}
+                                <span class="text-danger"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i>Portal is closed. Students will see a survey closed notice.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        Apply Survey Availability
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card-academic">
+            <div class="card-header-clean">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-database-check text-primary me-2"></i>System & Environment Information</h6>
+            </div>
+            <div class="card-body-clean">
+                <div class="row g-2 fs-8">
+                    <div class="col-6 text-muted">Primary Persistent Engine:</div>
+                    <div class="col-6 fw-semibold text-dark">MySQL 8 (SQLAlchemy ORM + PyMySQL)</div>
+
+                    <div class="col-6 text-muted">Analytics Processing:</div>
+                    <div class="col-6 fw-semibold text-dark">Python 3 (Pandas & NumPy)</div>
+
+                    <div class="col-6 text-muted">Export Engines:</div>
+                    <div class="col-6 fw-semibold text-dark">ReportLab PDF & Matplotlib Charts</div>
+
+                    <div class="col-6 text-muted">Demonstration Data Notice:</div>
+                    <div class="col-6">
+                        {% if is_demo_mode %}
+                            <span class="badge bg-warning-subtle text-warning">Demonstration Notice Active</span>
+                        {% else %}
+                            <span class="badge bg-light text-secondary border">Standard Production Mode</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block layout %}
+<div class="app-container">
+    <!-- Persistent Desktop Sidebar / Mobile Nav Drawer -->
+    <aside class="app-sidebar">
+        <div class="sidebar-header">
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-brand text-decoration-none">
+                <span class="logo-icon"><i class="bi bi-mortarboard-fill"></i></span>
+                <span>FeedbackInsight</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-label">Analytics & Overview</div>
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i>
+                <span>Overview Dashboard</span>
+            </a>
+            <a href="{{ url_for('reports.index') }}" class="sidebar-link {% if 'reports' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Reports & Exports</span>
+            </a>
+
+            <div class="nav-label">Academic Management</div>
+            <a href="{{ url_for('admin.courses') }}" class="sidebar-link {% if 'courses' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-book"></i>
+                <span>Courses Catalog</span>
+            </a>
+            <a href="{{ url_for('admin.questions') }}" class="sidebar-link {% if 'questions' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-ui-checks"></i>
+                <span>Feedback Questions</span>
+            </a>
+            <a href="{{ url_for('admin.responses') }}" class="sidebar-link {% if 'responses' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chat-square-text"></i>
+                <span>Responses & Review</span>
+            </a>
+
+            <div class="nav-label">Administration</div>
+            <a href="{{ url_for('admin.settings') }}" class="sidebar-link {% if 'settings' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-sliders"></i>
+                <span>System Settings</span>
+            </a>
+            <a href="{{ url_for('feedback.portal') }}" target="_blank" class="sidebar-link">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span>Open Student Portal</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 34px; height: 34px;">
+                        {{ current_user.display_name[0] if current_user.display_name else 'A' }}
+                    </div>
+                    <div class="text-truncate">
+                        <div class="fw-semibold text-truncate fs-8 text-dark">{{ current_user.display_name }}</div>
+                        <div class="text-muted fs-8 text-truncate">{{ current_user.email }}</div>
+                    </div>
+                </div>
+                <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Sign Out">
+                        <i class="bi bi-box-arrow-right fs-5"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <div class="app-main">
+        <header class="app-header">
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle" aria-label="Toggle navigation">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="mb-0 fw-bold">{% block page_title %}Analytics Dashboard{% endblock %}</h5>
+                    {% block breadcrumb %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                {% block header_actions %}{% endblock %}
+            </div>
+        </header>
+
+        <div class="app-content">
+            <!-- Flash Notifications -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

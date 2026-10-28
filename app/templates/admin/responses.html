@@ -1,0 +1,178 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Responses & Review &bull; FeedbackInsight{% endblock %}
+{% block page_title %}Feedback Responses & Comment Review{% endblock %}
+
+{% block admin_content %}
+<!-- Privacy & Governance Advisory Alert -->
+<div class="card-academic p-3 mb-4 bg-white border border-warning-subtle">
+    <div class="d-flex align-items-start gap-3">
+        <i class="bi bi-shield-exclamation text-warning fs-4"></i>
+        <div class="small">
+            <strong class="text-dark">Data Privacy & Comment Redaction Policy:</strong>
+            <p class="text-secondary mb-0">
+                Submissions are stored without student identity or IP tracking. However, student written comments may occasionally contain self-identifying references or sensitive remarks. Administrators may use the <strong>Redact</strong> action below to mask sensitive text while preserving statistical rating integrity.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card-academic p-3 mb-4 bg-white border">
+    <form method="GET" action="{{ url_for('admin.responses') }}" class="row g-2 align-items-center">
+        <div class="col-md-4 col-lg-3">
+            <select name="course_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Courses</option>
+                {% for c in courses %}
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                        {{ c.course_code }} - {{ c.course_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3 col-lg-2">
+            <select name="rating" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Ratings (1-5)</option>
+                <option value="1" {% if selected_rating == 1 %}selected{% endif %}>1 - Poor</option>
+                <option value="2" {% if selected_rating == 2 %}selected{% endif %}>2 - Below Average</option>
+                <option value="3" {% if selected_rating == 3 %}selected{% endif %}>3 - Average</option>
+                <option value="4" {% if selected_rating == 4 %}selected{% endif %}>4 - Good</option>
+                <option value="5" {% if selected_rating == 5 %}selected{% endif %}>5 - Excellent</option>
+            </select>
+        </div>
+
+        <div class="col-md-4 col-lg-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search comments text..." value="{{ search_query }}">
+            </div>
+        </div>
+
+        <div class="col-md-1 col-lg-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Filter</button>
+            {% if selected_course_id or selected_rating or search_query %}
+                <a href="{{ url_for('admin.responses') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Responses Table -->
+<div class="card-academic">
+    <div class="card-header-clean">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-chat-left-quote text-primary me-2"></i>Recorded Evaluations (Total: {{ pagination.total }})</h6>
+        <span class="text-muted fs-8">Page {{ pagination.page }} of {{ pagination.pages or 1 }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 140px;">Submitted</th>
+                    <th style="width: 130px;">Course</th>
+                    <th>Question / Feedback Context</th>
+                    <th class="text-center" style="width: 100px;">Rating</th>
+                    <th style="width: 110px;" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if pagination.items %}
+                    {% for resp, sub, course, quest in pagination.items %}
+                        <tr>
+                            <td class="text-muted fs-8">
+                                {{ sub.submitted_at.strftime('%Y-%m-%d %H:%M') }} UTC
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border fw-semibold">{{ course.course_code }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark fs-8">{{ quest.question_text }}</div>
+                                {% if resp.comment %}
+                                    <div class="mt-2 p-2 rounded bg-light border fs-8 text-secondary">
+                                        {% if resp.is_redacted %}
+                                            <span class="badge bg-danger-subtle text-danger mb-1"><i class="bi bi-eye-slash me-1"></i>Redacted by Administrator</span>
+                                            <div class="text-muted fst-italic">[Comment content redacted for privacy or sensitive disclosures]</div>
+                                        {% else %}
+                                            <i class="bi bi-quote text-muted me-1"></i>{{ resp.comment }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if resp.rating is not none %}
+                                    {% if resp.rating >= 4 %}
+                                        <span class="badge bg-success-subtle text-success fs-7 fw-bold">{{ resp.rating }}/5</span>
+                                    {% elif resp.rating == 3 %}
+                                        <span class="badge bg-warning-subtle text-warning fs-7 fw-bold">{{ resp.rating }}/5</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger fs-7 fw-bold">{{ resp.rating }}/5</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted fs-8">Text Only</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if resp.comment %}
+                                    <form action="{{ url_for('admin.redact_comment', response_id=resp.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm {% if resp.is_redacted %}btn-outline-primary{% else %}btn-outline-danger{% endif %}" title="{% if resp.is_redacted %}Restore Comment{% else %}Redact Comment{% endif %}">
+                                            <i class="bi {% if resp.is_redacted %}bi-eye{% else %}bi-eye-slash{% endif %}"></i>
+                                            <span class="d-none d-md-inline ms-1 fs-8">{% if resp.is_redacted %}Restore{% else %}Redact{% endif %}</span>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted fs-8">&mdash;</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            No feedback responses found matching the specified filter criteria.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination.pages > 1 %}
+        <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center">
+            <div class="fs-8 text-muted">
+                Showing {{ pagination.items|length }} of {{ pagination.total }} records
+            </div>
+            <nav aria-label="Responses pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.responses', page=pagination.prev_num, course_id=selected_course_id, rating=selected_rating, q=search_query) }}">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.responses', page=p, course_id=selected_course_id, rating=selected_rating, q=search_query) }}">{{ p }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.responses', page=pagination.next_num, course_id=selected_course_id, rating=selected_rating, q=search_query) }}">Next</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

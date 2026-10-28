@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Turn Student Feedback Into Meaningful Insights &bull; FeedbackInsight{% endblock %}
+
+{% block content %}
+<div class="py-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center mb-5 pb-4">
+        <div class="col-lg-7">
+            <span class="badge bg-indigo-subtle text-primary border border-indigo-subtle mb-3 px-3 py-2 fw-semibold">
+                <i class="bi bi-shield-check me-1"></i> 100% Cryptographically Anonymous
+            </span>
+            <h1 class="display-5 fw-bold text-dark mb-3">
+                Turn Student Feedback Into <span class="text-primary">Meaningful Insights.</span>
+            </h1>
+            <p class="lead text-secondary mb-4">
+                FeedbackInsight empowers academic departments to gather truthful, anonymous student feedback, analyze rating distributions, and elevate teaching quality with explainable statistical analytics.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                {% if is_survey_enabled %}
+                    <a href="{{ url_for('feedback.portal') }}" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-pencil-square me-2"></i> Share Feedback
+                    </a>
+                {% else %}
+                    <button class="btn btn-secondary btn-lg px-4" disabled>
+                        <i class="bi bi-pause-circle me-2"></i> Feedback Period Closed
+                    </button>
+                {% endif %}
+
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="bi bi-speedometer2 me-2"></i> Open Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-lock me-2"></i> Administrator Login
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="card-academic p-4 bg-white shadow-sm border">
+                <div class="d-flex align-items-center justify-content-between pb-3 border-bottom mb-3">
+                    <span class="fw-bold text-dark"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Evaluation Overview</span>
+                    <span class="badge bg-success-subtle text-success">Live System</span>
+                </div>
+                <div class="p-3 bg-light rounded-3 mb-3">
+                    <div class="small text-muted mb-1">Standard Rating Scale</div>
+                    <div class="d-flex justify-content-between text-center fw-bold fs-7">
+                        <div class="p-2 bg-white rounded border flex-fill mx-1">1<div class="fs-8 fw-normal text-muted">Poor</div></div>
+                        <div class="p-2 bg-white rounded border flex-fill mx-1">2<div class="fs-8 fw-normal text-muted">Below</div></div>
+                        <div class="p-2 bg-white rounded border flex-fill mx-1">3<div class="fs-8 fw-normal text-muted">Average</div></div>
+                        <div class="p-2 bg-white rounded border flex-fill mx-1">4<div class="fs-8 fw-normal text-muted">Good</div></div>
+                        <div class="p-2 bg-white rounded border flex-fill mx-1 text-primary">5<div class="fs-8 fw-normal text-primary">Excel</div></div>
+                    </div>
+                </div>
+                <div class="small text-secondary">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> Real-time standard deviation calculation
+                </div>
+                <div class="small text-secondary mt-1">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> Course and question statistical benchmarking
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3-Step Simple Feedback Process -->
+    <div class="my-5 py-4 border-top border-bottom">
+        <div class="text-center mb-5">
+            <h3 class="fw-bold text-dark">Three Simple Steps to Evaluative Excellence</h3>
+            <p class="text-secondary">Distraction-free, honest feedback designed for students and faculty.</p>
+        </div>
+
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="p-3">
+                    <div class="kpi-icon-wrapper kpi-icon-indigo mx-auto mb-3">
+                        <i class="bi bi-search fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">1. Select Your Course</h5>
+                    <p class="text-secondary small">
+                        Choose your active enrolled course from the institutional catalog. No account creation or student login is required.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3">
+                    <div class="kpi-icon-wrapper kpi-icon-emerald mx-auto mb-3">
+                        <i class="bi bi-star-half fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">2. Rate Key Dimensions</h5>
+                    <p class="text-secondary small">
+                        Evaluate instructional clarity, course materials, support, and assessment fairness on a standardized 1 to 5 scale.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3">
+                    <div class="kpi-icon-wrapper kpi-icon-sky mx-auto mb-3">
+                        <i class="bi bi-graph-up-arrow fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">3. Institutional Action</h5>
+                    <p class="text-secondary small">
+                        Responses are aggregated using transparent Python statistical models to generate actionable faculty and curriculum reports.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="my-5">
+        <div class="text-center mb-5">
+            <h3 class="fw-bold text-dark">Engineered for Academic Integrity & Transparency</h3>
+            <p class="text-secondary">A modern SaaS architecture built on Flask, MySQL, and statistical rigor.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card-academic p-4 h-100">
+                    <div class="kpi-icon-wrapper kpi-icon-indigo mb-3">
+                        <i class="bi bi-shield-lock fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">True Anonymity</h5>
+                    <p class="text-secondary small mb-0">
+                        Zero student identification, IP addresses, or device fingerprints are recorded. Students submit candid reviews with complete peace of mind.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card-academic p-4 h-100">
+                    <div class="kpi-icon-wrapper kpi-icon-amber mb-3">
+                        <i class="bi bi-calculator fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Deterministic Math</h5>
+                    <p class="text-secondary small mb-0">
+                        Powered by NumPy and Pandas. Computes mean, median, standard deviation, and distributions without black-box AI hallucinations.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card-academic p-4 h-100">
+                    <div class="kpi-icon-wrapper kpi-icon-emerald mb-3">
+                        <i class="bi bi-pie-chart fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Interactive Visuals</h5>
+                    <p class="text-secondary small mb-0">
+                        Interactive Chart.js visualizations illustrate course comparisons, rating distributions, and submission timelines seamlessly.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card-academic p-4 h-100">
+                    <div class="kpi-icon-wrapper kpi-icon-sky mb-3">
+                        <i class="bi bi-file-earmark-pdf fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Instant PDF & CSV</h5>
+                    <p class="text-secondary small mb-0">
+                        Generate comprehensive, publication-ready PDF evaluation reports and RFC-compliant CSV summaries with one click.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Courses Catalog Preview -->
+    <div class="my-5">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold text-dark mb-1">Active Courses Open for Feedback</h3>
+                <p class="text-secondary mb-0">Browse and participate in current academic term course evaluations.</p>
+            </div>
+            <a href="{{ url_for('feedback.portal') }}" class="btn btn-outline-primary btn-sm">
+                View All Courses <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        <div class="row g-3">
+            {% if courses %}
+                {% for c in courses[:6] %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card-academic p-3 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-light text-primary border fw-semibold">{{ c.course_code }}</span>
+                                    <span class="badge bg-success-subtle text-success fs-8">Active</span>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">{{ c.course_name }}</h6>
+                                <p class="text-muted small mb-2"><i class="bi bi-building me-1"></i>{{ c.department }}</p>
+                                <p class="text-secondary small mb-3 text-truncate-2">{{ c.description or 'Comprehensive academic instruction and evaluation course.' }}</p>
+                            </div>
+                            {% if is_survey_enabled %}
+                                <a href="{{ url_for('feedback.feedback_form', course_id=c.id) }}" class="btn btn-primary btn-sm w-100 mt-2">
+                                    Evaluate Course <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            {% else %}
+                                <button class="btn btn-light btn-sm w-100 mt-2 text-muted" disabled>
+                                    Feedback Closed
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="card-academic p-5 text-center text-muted">
+                        <i class="bi bi-journal-x fs-1 mb-2"></i>
+                        <p class="mb-0">No active courses are currently registered in the database.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

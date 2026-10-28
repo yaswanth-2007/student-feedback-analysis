@@ -1,0 +1,190 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Course Management &bull; FeedbackInsight{% endblock %}
+{% block page_title %}Academic Course Management{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+    <i class="bi bi-plus-lg me-1"></i> Add New Course
+</button>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Search and Filter -->
+<div class="card-academic p-3 mb-4 bg-white border">
+    <form method="GET" action="{{ url_for('admin.courses') }}" class="row g-2 align-items-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search by code, title, or department..." value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Search</button>
+            {% if search_query %}
+                <a href="{{ url_for('admin.courses') }}" class="btn btn-outline-secondary btn-sm" title="Clear Search"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Courses Table -->
+<div class="card-academic">
+    <div class="card-header-clean">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-bookmark text-primary me-2"></i>Registered Courses ({{ courses|length }})</h6>
+        <span class="text-muted fs-8">Preserves historical evaluations upon deactivation</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Course Name</th>
+                    <th>Department</th>
+                    <th>Assigned Faculty</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Submissions</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if courses %}
+                    {% for c in courses %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ c.course_code }}</td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ c.course_name }}</div>
+                                <div class="text-muted fs-8 text-truncate" style="max-width: 320px;">{{ c.description }}</div>
+                            </td>
+                            <td><span class="badge bg-light text-secondary border">{{ c.department }}</span></td>
+                            <td class="text-muted fs-8">
+                                {{ c.faculty.faculty_name if c.faculty else 'None Assigned' }}
+                            </td>
+                            <td class="text-center">
+                                {% if c.is_active %}
+                                    <span class="badge-academic badge-active">Active</span>
+                                {% else %}
+                                    <span class="badge-academic badge-inactive">Deactivated</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center fw-semibold text-secondary">
+                                {{ response_counts.get(c.id, 0) }}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal{{ c.id }}" title="Edit Details">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form action="{{ url_for('admin.toggle_course', course_id=c.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Change status for course {{ c.course_code }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn {% if c.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if c.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            <i class="bi {% if c.is_active %}bi-pause-circle{% else %}bi-play-circle{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Edit Course Modal -->
+                                <div class="modal fade" id="editModal{{ c.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content text-start">
+                                            <form action="{{ url_for('admin.edit_course', course_id=c.id) }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <div class="modal-header">
+                                                    <h6 class="modal-title fw-bold">Edit Course: {{ c.course_code }}</h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fs-8 fw-semibold text-dark">Course Title</label>
+                                                        <input type="text" name="course_name" class="form-control" value="{{ c.course_name }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fs-8 fw-semibold text-dark">Academic Department</label>
+                                                        <input type="text" name="department" class="form-control" value="{{ c.department }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fs-8 fw-semibold text-dark">Assigned Faculty Instructor</label>
+                                                        <select name="faculty_id" class="form-select">
+                                                            <option value="">No Assigned Faculty</option>
+                                                            {% for fac in faculty_list %}
+                                                                <option value="{{ fac.id }}" {% if c.faculty_id == fac.id %}selected{% endif %}>
+                                                                    {{ fac.faculty_name }} ({{ fac.department }})
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fs-8 fw-semibold text-dark">Description</label>
+                                                        <textarea name="description" class="form-control" rows="3">{{ c.description }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            No courses registered. Use the "Add New Course" button above to register one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Course Modal -->
+<div class="modal fade" id="addCourseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('admin.courses') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Register New Course</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-semibold text-dark">Course Identifier Code</label>
+                        <input type="text" name="course_code" class="form-control" placeholder="e.g. CS-201" required>
+                        <div class="form-text fs-8 text-muted">Unique alphanumeric course code.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-semibold text-dark">Course Title</label>
+                        <input type="text" name="course_name" class="form-control" placeholder="e.g. Data Structures and Algorithms" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-semibold text-dark">Department</label>
+                        <input type="text" name="department" class="form-control" placeholder="e.g. Computer Science" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-semibold text-dark">Assigned Faculty (Optional)</label>
+                        <select name="faculty_id" class="form-select">
+                            <option value="">Select Instructor</option>
+                            {% for fac in faculty_list %}
+                                <option value="{{ fac.id }}">{{ fac.faculty_name }} ({{ fac.department }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-semibold text-dark">Course Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Brief outline of syllabus and goals..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Create Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

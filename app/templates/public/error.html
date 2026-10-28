@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ error_title }} &bull; FeedbackInsight{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="card-academic p-5 bg-white border">
+            <div class="display-1 fw-bold text-muted mb-2">{{ error_code }}</div>
+            <h3 class="fw-bold text-dark mb-2">{{ error_title }}</h3>
+            <p class="text-secondary mb-4">{{ error_message }}</p>
+            <a href="{{ url_for('public.landing') }}" class="btn btn-primary">
+                <i class="bi bi-house me-1"></i> Return to Homepage
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

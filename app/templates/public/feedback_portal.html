@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Course Feedback Portal &bull; FeedbackInsight{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <!-- Portal Header & Guarantee Notice -->
+    <div class="card-academic p-4 mb-4 bg-white border">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-indigo-subtle text-primary mb-2">Student Evaluation Portal</span>
+                <h2 class="fw-bold text-dark mb-1">Select an Active Course to Evaluate</h2>
+                <p class="text-secondary mb-0 small">
+                    Your answers are completely anonymous. No student ID, name, email address, or network IP address is stored.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <div class="d-inline-flex align-items-center gap-2 p-2 px-3 bg-light rounded border text-muted fs-8">
+                    <i class="bi bi-shield-lock-fill text-success fs-5"></i>
+                    <span class="text-start"><strong>Cryptographic Anonymity</strong><br>Zero individual traceability</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Department Filters -->
+    <div class="card-academic p-3 mb-4">
+        <form method="GET" action="{{ url_for('feedback.portal') }}" class="row g-2 align-items-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="Search by course code or title..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-4">
+                <select name="department" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Academic Departments</option>
+                    {% for d in departments %}
+                        <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-lg-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                {% if search_query or selected_dept %}
+                    <a href="{{ url_for('feedback.portal') }}" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Courses Grid -->
+    <div class="row g-3">
+        {% if courses %}
+            {% for c in courses %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-academic p-3 h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-light text-primary border fw-semibold">{{ c.course_code }}</span>
+                                <span class="badge bg-light text-secondary fs-8">{{ c.department }}</span>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">{{ c.course_name }}</h5>
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-person-badge me-1"></i>
+                                {% if c.faculty %}{{ c.faculty.faculty_name }}{% else %}Faculty Assigned{% endif %}
+                            </div>
+                            <p class="text-secondary small mb-3">{{ c.description or 'Course evaluation survey covering teaching efficacy, assessment, and materials.' }}</p>
+                        </div>
+                        <div>
+                            {% if survey_enabled %}
+                                <a href="{{ url_for('feedback.feedback_form', course_id=c.id) }}" class="btn btn-primary w-100">
+                                    Start Evaluation <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            {% else %}
+                                <button class="btn btn-secondary w-100" disabled>
+                                    Feedback Closed
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card-academic p-5 text-center">
+                    <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
+                    <h5 class="empty-state-title">No Active Courses Match Your Criteria</h5>
+                    <p class="empty-state-description">Try adjusting your search terms or selecting a different academic department.</p>
+                    <a href="{{ url_for('feedback.portal') }}" class="btn btn-outline-primary btn-sm">Clear Search Filters</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
